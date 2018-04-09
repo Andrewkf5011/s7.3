@@ -1,38 +1,29 @@
 #include <mbed.h>
 #include <EthernetInterface.h>
 #include <rtos.h>
+#include "components.h"
+#include "communications.h"
 
 
-int main() {
-    DigitalIn sw(SW2);
-    EthernetInterface eth;
-    UDPSocket udp;
-    char buffer[256];
+int main()
+{
+    AssignmentBoard board;
 
-    printf("conecting \n");
-    eth.connect();
-    const char *ip = eth.get_ip_address();
-    printf("IP address is: %s\n", ip ? ip : "No IP");
+    Button btn(board.K64F_SW2, true);
 
-    udp.open( &eth);
-    SocketAddress source;
-    /* YOU will have to hardwire the IP address in here */
-    SocketAddress server("192.168.70.36",4445);
+    ServerCommunicator serverCommunicator("192.168.70.15",4445);
 
-    while(1){
+    while(1)
+    {
+        //Wait until the switch has been pressed.
         printf("press sw2\n");
-        while( sw.read() ) /* 1 is not pressed */ ;
+        while(!(btn.isPressed()));
 
-        printf("sending empty packet to '%d' at '%s'\n",  server.get_port(), server.get_ip_address() );
-        nsapi_size_or_error_t r = udp.sendto( server, buffer, sizeof(buffer));
-        printf("sent %d bytes\n",r);
+        //Send a request to the server.
+        serverCommunicator.requestMessage();
 
-        printf("recieveing...\n");
-        int len = udp.recvfrom( &source, buffer, sizeof(buffer));
-        buffer[len]='\0';
-        printf("from %s\n", source.get_ip_address());
-        printf("  at %d\n", source.get_port());
-        printf("data %s\n", buffer);
+        char* msg = (char*)serverCommunicator.getMessage().c_str();
+        printf("data: %s\n", msg);
         printf("----\n");
     }
 }
