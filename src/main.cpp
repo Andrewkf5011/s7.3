@@ -1,29 +1,24 @@
 #include <mbed.h>
 #include <EthernetInterface.h>
 #include <rtos.h>
-#include "components.h"
 #include "communications.h"
 
 
 int main()
 {
-    AssignmentBoard board;
+    DigitalIn sw(SW2);
 
-    Button btn(board.K64F_SW2, true);
-
-    ServerCommunicator serverCommunicator("192.168.70.15",4445);
+    ServerCommunicator serverCommunicator;
 
     while(1)
     {
-        //Wait until the switch has been pressed.
+        //Wait until the user presses the button.
         printf("press sw2\n");
-        while(!(btn.isPressed()));
+        while(sw.read());
 
-        //Send a request to the server.
-        serverCommunicator.requestMessage();
-
-        char* msg = (char*)serverCommunicator.getMessage().c_str();
-        printf("data: %s\n", msg);
+        //Retrieve a message from the server and print it out to the console.
+        char* message = (char*) serverCommunicator.getMessage().c_str();
+        printf("data %s\n", message);
         printf("----\n");
     }
 }
